@@ -1,0 +1,38 @@
+{
+  "name": "three-high-precision-lines",
+  "version": "0.1.0",
+  "description": "Camera-relative high precision lines for Three.js",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --dts --watch"
+  },
+  "peerDependencies": {
+    "three": "^0.184.0"
+  },
+  "keywords": [
+    "three",
+    "threejs",
+    "webgl",
+    "graphics",
+    "lines",
+    "precision"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<your-name>/three-high-precision-lines.git"
+  }
+}
