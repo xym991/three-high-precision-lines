@@ -1,6 +1,6 @@
 {
   "name": "three-high-precision-lines",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Camera-relative high precision lines for Three.js",
   "type": "module",
   "main": "./dist/index.js",
