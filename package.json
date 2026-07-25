@@ -1,6 +1,6 @@
 {
   "name": "three-high-precision-lines",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Camera-relative high precision lines for Three.js",
   "type": "module",
   "main": "./dist/index.js",
@@ -34,5 +34,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xym991/three-high-precision-lines.git"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2"
   }
 }

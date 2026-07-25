@@ -9,6 +9,8 @@ import {
 
 import splitVector3 from "../utils/splitVector3";
 
+const _cameraWorldPosition = new Vector3();
+
 export interface HighPrecisionLineMaterialParameters {
   color?: ColorRepresentation;
   opacity?: number;
@@ -54,13 +56,13 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
         void main() {
 
           vec3 relative =
-            ( positionHigh - cameraHigh ) +
-            ( positionLow - cameraLow );
+            (positionHigh - cameraHigh) +
+            (positionLow - cameraLow);
 
           gl_Position =
             projectionMatrix *
             rotation *
-            vec4( relative, 1.0 );
+            vec4(relative, 1.0);
 
         }
       `,
@@ -71,7 +73,7 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
 
         void main() {
 
-          gl_FragColor = vec4( diffuse, opacity );
+          gl_FragColor = vec4(diffuse, opacity);
 
         }
       `,
@@ -86,26 +88,19 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
     return this.uniforms.diffuse.value;
   }
 
-  override onBeforeRender(): void {
+  override onBeforeRender(renderer: any, scene: any, camera: Camera): void {
     this.uniforms.opacity.value = this.opacity;
-  }
 
-  setCamera(camera: Camera): void {
     camera.updateMatrixWorld(true);
 
-    this.setCameraPosition(camera.position);
-    this.setCameraRotation(camera.matrixWorldInverse);
-  }
+    camera.getWorldPosition(_cameraWorldPosition);
 
-  setCameraPosition(position: Vector3): void {
     splitVector3(
-      position,
+      _cameraWorldPosition,
       this.uniforms.cameraHigh.value,
       this.uniforms.cameraLow.value,
     );
-  }
 
-  setCameraRotation(matrix: Matrix4): void {
-    this.uniforms.rotation.value.extractRotation(matrix);
+    this.uniforms.rotation.value.extractRotation(camera.matrixWorldInverse);
   }
 }

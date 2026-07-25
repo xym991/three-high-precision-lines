@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>High Precision Line</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+
+      button {
+        margin: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./node_modules/three/build/three.module.js",
+
+          "three-high-precision-lines": "./dist/index.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+
+      import {
+        HighPrecisionLine,
+        HighPrecisionLineGeometry,
+        HighPrecisionLineMaterial,
+      } from "three-high-precision-lines";
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x111111);
+
+      const camera = new THREE.PerspectiveCamera(
+        100,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000,
+      );
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+      });
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      document.body.appendChild(renderer.domElement);
+
+      //
+      // Orbit Parameters
+      //
+
+      const ORBIT_RADIUS = 1e7;
+      const SEGMENTS = 2 ** 16;
+
+      //
+      // UI
+      //
+
+      let useHighPrecision = true;
+
+      const button = document.createElement("button");
+
+      button.textContent = "Rendering: High Precision Line";
+
+      button.style.position = "absolute";
+      button.style.top = "10px";
+      button.style.left = "10px";
+      button.style.padding = "10px";
+
+      document.body.appendChild(button);
+
+      //
+      // Orbit Points
+      //
+
+      const positions = [];
+
+      for (let i = 0; i <= SEGMENTS; i++) {
+        const angle = (i / SEGMENTS) * Math.PI * 2;
+
+        positions.push(
+          Math.cos(angle) * ORBIT_RADIUS,
+          0,
+          Math.sin(angle) * ORBIT_RADIUS,
+        );
+      }
+
+      //
+      // Standard Orbit
+      //
+
+      const normalGeometry = new THREE.BufferGeometry();
+
+      normalGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positions, 3),
+      );
+
+      const normalMaterial = new THREE.LineBasicMaterial({
+        color: 0xff0000,
+      });
+
+      const normalOrbit = new THREE.LineLoop(normalGeometry, normalMaterial);
+
+      //
+      // High Precision Orbit
+      //
+
+      const highPrecisionGeometry = new HighPrecisionLineGeometry({
+        positions,
+      });
+
+      // Or set after creation:
+      // highPrecisionGeometry.setFromPositions( positions );
+
+      // Or create from a Vector3 array:
+      // highPrecisionGeometry.setFromPoints( points );
+
+      const highPrecisionMaterial = new HighPrecisionLineMaterial({
+        color: 0x00ff00,
+      });
+
+      /*
+       * HighPrecisionLineMaterial requires the active camera
+       * to be provided every frame. The material uses the
+       * camera position and orientation to reconstruct
+       * high precision camera-relative coordinates in
+       * the vertex shader.
+       */
+
+      const highPrecisionOrbit = new HighPrecisionLine(
+        highPrecisionGeometry,
+        highPrecisionMaterial,
+      );
+
+      scene.add(highPrecisionOrbit);
+
+      //
+      // Moving Object
+      //
+
+      const pluto = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color: 0x0000ff,
+        }),
+      );
+
+      scene.add(pluto);
+
+      //
+      // Toggle
+      //
+
+      button.onclick = () => {
+        useHighPrecision = !useHighPrecision;
+
+        scene.remove(highPrecisionOrbit);
+        scene.remove(normalOrbit);
+
+        scene.add(useHighPrecision ? highPrecisionOrbit : normalOrbit);
+
+        button.textContent = useHighPrecision
+          ? "Rendering: High Precision Line"
+          : "Rendering: Standard Line";
+      };
+
+      //
+      // Animation
+      //
+
+      let angle = 0;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        angle += 0.001;
+        pluto.position.set(
+          Math.cos(angle) * ORBIT_RADIUS,
+          0,
+          Math.sin(angle) * ORBIT_RADIUS,
+        );
+        //
+        // Follow the moving object closely so
+        // floating-point precision issues become visible.
+        //
+        camera.position.copy(pluto.position);
+        camera.position.addScalar(5);
+        camera.lookAt(pluto.position);
+        camera.updateMatrixWorld(true);
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>
