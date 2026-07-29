@@ -40,7 +40,7 @@
         100,
         window.innerWidth / window.innerHeight,
         0.1,
-        1000,
+        1000000000,
       );
 
       const renderer = new THREE.WebGLRenderer({
@@ -84,11 +84,7 @@
       for (let i = 0; i <= SEGMENTS; i++) {
         const angle = (i / SEGMENTS) * Math.PI * 2;
 
-        positions.push(
-          Math.cos(angle) * ORBIT_RADIUS,
-          0,
-          Math.sin(angle) * ORBIT_RADIUS,
-        );
+        positions.push(Math.cos(angle), 0, Math.sin(angle));
       }
 
       //
@@ -107,6 +103,9 @@
       });
 
       const normalOrbit = new THREE.LineLoop(normalGeometry, normalMaterial);
+
+      // normalOrbit.rotation.x = Math.PI / 180;
+      normalOrbit.scale.setScalar(ORBIT_RADIUS);
 
       //
       // High Precision Orbit
@@ -140,6 +139,11 @@
       );
 
       scene.add(highPrecisionOrbit);
+
+      // highPrecisionOrbit.rotation.x = Math.PI / 180;
+      highPrecisionOrbit.scale.setScalar(ORBIT_RADIUS);
+
+      // highPrecisionOrbit.rotation.x = Math.PI / 180;
 
       //
       // Moving Object
@@ -179,7 +183,7 @@
 
       function animate() {
         requestAnimationFrame(animate);
-        angle += 0.001;
+        angle += 0.01;
         pluto.position.set(
           Math.cos(angle) * ORBIT_RADIUS,
           0,
@@ -193,6 +197,9 @@
         camera.position.addScalar(5);
         camera.lookAt(pluto.position);
         camera.updateMatrixWorld(true);
+        // camera.position.set(0, 1000000, 30000000);
+
+        // camera.lookAt(0, 0, 0);
 
         renderer.render(scene, camera);
       }

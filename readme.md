@@ -1,16 +1,21 @@
 # three-high-precision-lines
 
-High precision line rendering for Three.js using camera-relative coordinates.
+Render extremely large lines in Three.js without floating-point precision artifacts.
 
-`three-high-precision-lines` eliminates floating-point precision artifacts when rendering lines at extremely large world coordinates, making it suitable for astronomy visualizations, planetary simulations, space games, geospatial applications, and other large-scale scenes.
+`three-high-precision-lines` uses camera-relative rendering to maintain stable, artifact-free lines even when working at planetary, astronomical, or geospatial scales. It integrates with the normal Three.js scene graph, so lines can be translated, rotated, scaled, and parented like any other object.
+
+---
 
 ## Features
 
-- Camera-relative high precision rendering
-- Works at millions or billions of world units from the origin
+- Stable rendering at extremely large world coordinates
+- Camera-relative precision without modifying your scene
+- Supports normal Object3D transforms and parenting
+- Drop-in replacement for standard Three.js lines
 - TypeScript support included
-- Familiar Three.js-style API
-- Compatible with standard Three.js cameras and renderers
+- No per-frame setup required
+
+---
 
 ## Installation
 
@@ -18,23 +23,25 @@ High precision line rendering for Three.js using camera-relative coordinates.
 npm install three three-high-precision-lines
 ```
 
+---
+
 ## Why?
 
-Three.js stores vertex positions using 32-bit floating point values on the GPU.
+Three.js uploads vertex positions to the GPU as 32-bit floating point values.
 
-At large distances from the world origin, precision is lost and lines begin to jitter, wobble, or break apart as the camera moves.
+At very large world coordinates, subtracting two large values leaves very little precision for the actual distance between them. This causes lines to jitter, wobble, disconnect, or visibly shake as the camera moves.
 
-This package solves that problem by:
+`three-high-precision-lines` solves this by storing vertex positions as high and low precision components and reconstructing camera-relative coordinates directly in the vertex shader.
 
-1. Splitting world positions into high and low precision components
-2. Uploading both components to the GPU
-3. Reconstructing camera-relative coordinates in the vertex shader
+The result is stable rendering even when working millions or billions of units from the world origin.
 
-This preserves significantly more precision than standard line rendering.
+---
 
 ## Basic Usage
 
 ```ts
+import * as THREE from "three";
+
 import {
   HighPrecisionLine,
   HighPrecisionLineGeometry,
@@ -54,25 +61,19 @@ const line = new HighPrecisionLine(geometry, material);
 scene.add(line);
 ```
 
-## Camera Updates
+Nothing else is required.
 
-The material must be updated whenever the camera position or orientation changes.
-
-Typically this is done once per frame:
+Render your scene normally.
 
 ```ts
-function animate() {
-  requestAnimationFrame(animate);
-
-  material.setCamera(camera);
-
-  renderer.render(scene, camera);
-}
+renderer.render(scene, camera);
 ```
+
+---
 
 ## Creating Geometry
 
-### From Flat Position Arrays
+### From a flat position array
 
 ```ts
 const geometry = new HighPrecisionLineGeometry({
@@ -80,7 +81,9 @@ const geometry = new HighPrecisionLineGeometry({
 });
 ```
 
-### From Points
+---
+
+### From Vector3 points
 
 ```ts
 const geometry = new HighPrecisionLineGeometry();
@@ -92,35 +95,51 @@ geometry.setFromPoints([
 ]);
 ```
 
+---
+
 ## Example
 
 ```ts
-const geometry = new HighPrecisionLineGeometry({
-  positions,
-});
-
-const material = new HighPrecisionLineMaterial({
-  color: 0x00ff00,
-});
-
-const orbit = new HighPrecisionLine(geometry, material);
+const orbit = new HighPrecisionLine(
+  new HighPrecisionLineGeometry({
+    positions,
+  }),
+  new HighPrecisionLineMaterial({
+    color: 0x00ff00,
+  }),
+);
 
 scene.add(orbit);
 
 function animate() {
   requestAnimationFrame(animate);
 
-  material.setCamera(camera);
-
   renderer.render(scene, camera);
 }
 ```
 
+---
+
+## Scene Graph Support
+
+`HighPrecisionLine` extends `THREE.Line`, so it behaves like any other Three.js object.
+
+This means it can be
+
+- translated
+- rotated
+- scaled
+- parented to other objects
+- nested within groups
+- animated using the normal scene graph
+
+without any special handling.
+
+---
+
 ## API
 
 ### HighPrecisionLine
-
-A line object that renders using camera-relative high precision coordinates.
 
 ```ts
 new HighPrecisionLine(
@@ -129,9 +148,9 @@ new HighPrecisionLine(
 );
 ```
 
-### HighPrecisionLineGeometry
+---
 
-Geometry storing split high and low precision position buffers.
+### HighPrecisionLineGeometry
 
 ```ts
 new HighPrecisionLineGeometry({
@@ -148,9 +167,9 @@ setPositionsHigh(positionsHigh);
 setPositionsLow(positionsLow);
 ```
 
-### HighPrecisionLineMaterial
+---
 
-Shader material responsible for reconstructing camera-relative coordinates.
+### HighPrecisionLineMaterial
 
 ```ts
 new HighPrecisionLineMaterial({
@@ -160,28 +179,31 @@ new HighPrecisionLineMaterial({
 });
 ```
 
-#### Methods
+No manual camera updates are required.
 
-```ts
-setCamera(camera);
-setCameraPosition(position);
-setCameraRotation(matrix);
-```
+---
 
 ## Use Cases
 
 - Astronomy visualizations
+- Planetary rendering
 - Solar system simulators
 - Space games
-- Planetary rendering
-- Geospatial applications
+- GIS and geospatial visualization
 - Scientific visualization
+- CAD applications
 - Large-scale simulations
+
+---
 
 ## License
 
 MIT
 
+---
+
 ## Acknowledgements
 
-Inspired by large-scale rendering techniques used in scientific visualization, astronomy software, and game engines. Originally developed while building Astrarium, a real-time astronomy and solar-system visualization project.
+Originally developed for **Astrarium**, a real-time astronomy and solar system visualization project.
+
+The implementation is inspired by camera-relative rendering techniques commonly used in scientific visualization and modern game engines.

@@ -1,15 +1,10 @@
 import {
-  Camera,
   Color,
   Matrix4,
   ShaderMaterial,
   Vector3,
   type ColorRepresentation,
 } from "three";
-
-import splitVector3 from "../utils/splitVector3";
-
-const _cameraWorldPosition = new Vector3();
 
 export interface HighPrecisionLineMaterialParameters {
   color?: ColorRepresentation;
@@ -23,7 +18,8 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
   declare uniforms: {
     cameraHigh: { value: Vector3 };
     cameraLow: { value: Vector3 };
-    rotation: { value: Matrix4 };
+    viewRotation: { value: Matrix4 };
+    objectLinearTransform: { value: Matrix4 };
     diffuse: { value: Color };
     opacity: { value: number };
   };
@@ -33,7 +29,9 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
       uniforms: {
         cameraHigh: { value: new Vector3() },
         cameraLow: { value: new Vector3() },
-        rotation: { value: new Matrix4() },
+
+        viewRotation: { value: new Matrix4() },
+        objectLinearTransform: { value: new Matrix4() },
 
         diffuse: {
           value: new Color(parameters.color ?? 0xffffff),
@@ -51,18 +49,22 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
         uniform vec3 cameraHigh;
         uniform vec3 cameraLow;
 
-        uniform mat4 rotation;
+        uniform mat4 viewRotation;
+        uniform mat4 objectLinearTransform;
 
         void main() {
 
-          vec3 relative =
-            (positionHigh - cameraHigh) +
-            (positionLow - cameraLow);
+            vec3 relative =
+                (positionHigh - cameraHigh) +
+                (positionLow - cameraLow);
 
-          gl_Position =
-            projectionMatrix *
-            rotation *
-            vec4(relative, 1.0);
+            relative =
+                (objectLinearTransform * vec4(relative, 0.0)).xyz;
+
+            gl_Position =
+                projectionMatrix *
+                viewRotation *
+                vec4(relative, 1.0);
 
         }
       `,
@@ -72,9 +74,7 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
         uniform float opacity;
 
         void main() {
-
-          gl_FragColor = vec4(diffuse, opacity);
-
+            gl_FragColor = vec4(diffuse, opacity);
         }
       `,
 
@@ -86,21 +86,5 @@ export default class HighPrecisionLineMaterial extends ShaderMaterial {
 
   get color(): Color {
     return this.uniforms.diffuse.value;
-  }
-
-  override onBeforeRender(renderer: any, scene: any, camera: Camera): void {
-    this.uniforms.opacity.value = this.opacity;
-
-    camera.updateMatrixWorld(true);
-
-    camera.getWorldPosition(_cameraWorldPosition);
-
-    splitVector3(
-      _cameraWorldPosition,
-      this.uniforms.cameraHigh.value,
-      this.uniforms.cameraLow.value,
-    );
-
-    this.uniforms.rotation.value.extractRotation(camera.matrixWorldInverse);
   }
 }
